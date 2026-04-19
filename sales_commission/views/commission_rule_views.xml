@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Commission Rule Form View -->
+    <record id="view_commission_rule_form" model="ir.ui.view">
+        <field name="name">commission.rule.form</field>
+        <field name="model">commission.rule</field>
+        <field name="arch" type="xml">
+            <form string="Commission Rule">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_commission_lines"
+                                type="object"
+                                class="oe_stat_button"
+                                icon="fa-list">
+                            <field name="line_count" widget="statinfo" string="Lines"/>
+                        </button>
+                    </div>
+                    <widget name="web_ribbon" title="Archived"
+                            bg_color="text-bg-danger"
+                            invisible="active"/>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="Rule Name..."/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="General">
+                            <field name="salesperson_id"/>
+                            <field name="commission_type"/>
+                            <field name="apply_on"/>
+                            <field name="active"/>
+                            <field name="sequence"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                        <group string="Commission Rate">
+                            <field name="rate"
+                                   invisible="commission_type == 'fixed'"
+                                   required="commission_type != 'fixed'"/>
+                            <field name="fixed_amount"
+                                   invisible="commission_type != 'fixed'"
+                                   required="commission_type == 'fixed'"/>
+                            <field name="min_margin_pct"
+                                   invisible="commission_type not in ('margin_pct', 'margin_amount')"/>
+                        </group>
+                    </group>
+                    <group string="Validity Period">
+                        <group>
+                            <field name="date_from"/>
+                            <field name="date_to"/>
+                        </group>
+                    </group>
+                    <group string="Product Filter"
+                           invisible="commission_type != 'product'">
+                        <field name="product_ids"
+                               widget="many2many_tags"
+                               invisible="commission_type != 'product'"
+                               required="commission_type == 'product'"/>
+                    </group>
+                    <group string="Category Filter"
+                           invisible="commission_type != 'category'">
+                        <field name="product_category_ids"
+                               widget="many2many_tags"
+                               invisible="commission_type != 'category'"
+                               required="commission_type == 'category'"/>
+                    </group>
+                    <group string="Notes">
+                        <field name="note" nolabel="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Commission Rule List View -->
+    <record id="view_commission_rule_list" model="ir.ui.view">
+        <field name="name">commission.rule.list</field>
+        <field name="model">commission.rule</field>
+        <field name="arch" type="xml">
+            <list string="Commission Rules">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="salesperson_id"/>
+                <field name="commission_type"/>
+                <field name="rate" string="Rate (%)"/>
+                <field name="fixed_amount" optional="hide"/>
+                <field name="date_from" optional="show"/>
+                <field name="date_to" optional="show"/>
+                <field name="line_count" string="Lines"/>
+                <field name="active" widget="toggle_button"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Commission Rule Search View -->
+    <record id="view_commission_rule_search" model="ir.ui.view">
+        <field name="name">commission.rule.search</field>
+        <field name="model">commission.rule</field>
+        <field name="arch" type="xml">
+            <search string="Commission Rules">
+                <field name="name"/>
+                <field name="salesperson_id"/>
+                <filter string="Active" name="active" domain="[('active','=',True)]"/>
+                <filter string="Archived" name="archived" domain="[('active','=',False)]"/>
+                <separator/>
+                <filter string="By Payment" name="type_payment"
+                        domain="[('commission_type','=','payment')]"/>
+                <filter string="By Product" name="type_product"
+                        domain="[('commission_type','=','product')]"/>
+                <filter string="By Category" name="type_category"
+                        domain="[('commission_type','=','category')]"/>
+                <filter string="By Margin" name="type_margin"
+                        domain="[('commission_type','in',['margin_pct','margin_amount'])]"/>
+                <separator/>
+                <filter string="Group by Salesperson" name="group_salesperson"
+                        context="{'group_by': 'salesperson_id'}"/>
+                <filter string="Group by Commission Type" name="group_type"
+                        context="{'group_by': 'commission_type'}"/>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_commission_rule" model="ir.actions.act_window">
+        <field name="name">Commission Rules</field>
+        <field name="res_model">commission.rule</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_active': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first commission rule
+            </p>
+            <p>
+                Define commission rules per salesperson. Rules are evaluated
+                automatically when a customer invoice is paid.
+            </p>
+        </field>
+    </record>
+
+</odoo>

@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Commission Analysis List View -->
+    <record id="view_commission_report_list" model="ir.ui.view">
+        <field name="name">commission.report.list</field>
+        <field name="model">commission.report</field>
+        <field name="arch" type="xml">
+            <list string="Commission Analysis" create="false" edit="false" delete="false">
+                <field name="date"/>
+                <field name="salesperson_id"/>
+                <field name="invoice_id"/>
+                <field name="invoice_partner_id"/>
+                <field name="rule_id" optional="show"/>
+                <field name="commission_type"/>
+                <field name="base_amount" optional="show"/>
+                <field name="commission_amount" sum="Total"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'draft'"
+                       decoration-success="state == 'confirmed'"
+                       decoration-warning="state == 'invoiced'"
+                       decoration-danger="state == 'cancelled'"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Commission Analysis Graph View -->
+    <record id="view_commission_report_graph" model="ir.ui.view">
+        <field name="name">commission.report.graph</field>
+        <field name="model">commission.report</field>
+        <field name="arch" type="xml">
+            <graph string="Commission Analysis" type="bar">
+                <field name="salesperson_id"/>
+                <field name="commission_amount" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <!-- Commission Analysis Pivot View -->
+    <record id="view_commission_report_pivot" model="ir.ui.view">
+        <field name="name">commission.report.pivot</field>
+        <field name="model">commission.report</field>
+        <field name="arch" type="xml">
+            <pivot string="Commission Analysis">
+                <field name="salesperson_id" type="row"/>
+                <field name="commission_type" type="col"/>
+                <field name="commission_amount" type="measure"/>
+                <field name="base_amount" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <!-- Commission Analysis Search View -->
+    <record id="view_commission_report_search" model="ir.ui.view">
+        <field name="name">commission.report.search</field>
+        <field name="model">commission.report</field>
+        <field name="arch" type="xml">
+            <search string="Commission Analysis">
+                <field name="salesperson_id"/>
+                <field name="invoice_id"/>
+                <field name="invoice_partner_id"/>
+                <filter string="Draft" name="draft" domain="[('state','=','draft')]"/>
+                <filter string="Confirmed" name="confirmed" domain="[('state','=','confirmed')]"/>
+                <filter string="Invoiced" name="invoiced" domain="[('state','=','invoiced')]"/>
+                <separator/>
+                <filter string="By Payment" name="type_payment"
+                        domain="[('commission_type','=','payment')]"/>
+                <filter string="By Product" name="type_product"
+                        domain="[('commission_type','=','product')]"/>
+                <filter string="By Category" name="type_category"
+                        domain="[('commission_type','=','category')]"/>
+                <filter string="By Margin" name="type_margin"
+                        domain="[('commission_type','in',['margin_pct','margin_amount'])]"/>
+                <separator/>
+                <filter string="This Month" name="this_month"
+                        domain="[('date','&gt;=', (context_today()).strftime('%Y-%m-01')),
+                                 ('date','&lt;=', (context_today()).strftime('%Y-%m-30'))]"/>
+                <filter string="This Year" name="this_year"
+                        domain="[('date','&gt;=', (context_today()).strftime('%Y-01-01'))]"/>
+                <separator/>
+                <filter string="Group by Salesperson" name="group_salesperson"
+                        context="{'group_by': 'salesperson_id'}"/>
+                <filter string="Group by Commission Type" name="group_type"
+                        context="{'group_by': 'commission_type'}"/>
+                <filter string="Group by Month" name="group_month"
+                        context="{'group_by': 'date:month'}"/>
+                <filter string="Group by Quarter" name="group_quarter"
+                        context="{'group_by': 'date:quarter'}"/>
+                <filter string="Group by Status" name="group_state"
+                        context="{'group_by': 'state'}"/>
+            </search>
+        </field>
+    </record>
+
+    <!-- Commission Analysis Action -->
+    <record id="action_commission_report" model="ir.actions.act_window">
+        <field name="name">Commission Analysis</field>
+        <field name="res_model">commission.report</field>
+        <field name="view_mode">list,graph,pivot</field>
+        <field name="context">{'search_default_this_year': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No commission data yet
+            </p>
+            <p>Commission analysis will appear here once invoices are paid.</p>
+        </field>
+    </record>
+
+</odoo>

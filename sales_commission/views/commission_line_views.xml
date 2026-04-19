@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Commission Line Form View -->
+    <record id="view_commission_line_form" model="ir.ui.view">
+        <field name="name">commission.line.form</field>
+        <field name="model">commission.line</field>
+        <field name="arch" type="xml">
+            <form string="Commission Line">
+                <header>
+                    <button name="action_confirm" string="Confirm" type="object"
+                            class="btn-primary"
+                            invisible="state != 'draft'"/>
+                    <button name="action_create_invoice" string="Create Invoice" type="object"
+                            class="btn-primary"
+                            invisible="state != 'confirmed'"/>
+                    <button name="action_reset_draft" string="Reset to Draft" type="object"
+                            invisible="state not in ('confirmed',)"/>
+                    <button name="action_cancel" string="Cancel" type="object"
+                            invisible="state in ('invoiced', 'cancelled')"/>
+                    <button name="action_print_report" string="Print" type="object"
+                            icon="fa-print"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,confirmed,invoiced"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" readonly="1"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Commission">
+                            <field name="rule_id"/>
+                            <field name="salesperson_id"/>
+                            <field name="commission_type" readonly="1"/>
+                            <field name="date"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                        <group string="Invoice">
+                            <field name="invoice_id"/>
+                            <field name="invoice_partner_id" readonly="1"/>
+                            <field name="invoice_date" readonly="1"/>
+                            <field name="base_amount" readonly="1"/>
+                            <field name="commission_amount"/>
+                        </group>
+                    </group>
+                    <group string="Commission Invoice"
+                           invisible="not commission_invoice_id">
+                        <field name="commission_invoice_id" readonly="1"/>
+                        <button name="action_view_commission_invoice"
+                                string="View Invoice" type="object"
+                                icon="fa-external-link"
+                                invisible="not commission_invoice_id"/>
+                    </group>
+                    <group>
+                        <field name="note"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Commission Line List View -->
+    <record id="view_commission_line_list" model="ir.ui.view">
+        <field name="name">commission.line.list</field>
+        <field name="model">commission.line</field>
+        <field name="arch" type="xml">
+            <list string="Commission Lines"
+                  decoration-info="state == 'draft'"
+                  decoration-success="state == 'confirmed'"
+                  decoration-muted="state == 'cancelled'"
+                  decoration-warning="state == 'invoiced'">
+                <field name="name"/>
+                <field name="date"/>
+                <field name="salesperson_id"/>
+                <field name="invoice_id"/>
+                <field name="invoice_partner_id"/>
+                <field name="rule_id" optional="show"/>
+                <field name="commission_type"/>
+                <field name="base_amount" optional="show"/>
+                <field name="commission_amount" sum="Total Commission"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'draft'"
+                       decoration-success="state == 'confirmed'"
+                       decoration-warning="state == 'invoiced'"
+                       decoration-danger="state == 'cancelled'"/>
+                <button name="action_confirm" string="Confirm" type="object"
+                        icon="fa-check"
+                        invisible="state != 'draft'"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Commission Line Search View -->
+    <record id="view_commission_line_search" model="ir.ui.view">
+        <field name="name">commission.line.search</field>
+        <field name="model">commission.line</field>
+        <field name="arch" type="xml">
+            <search string="Commission Lines">
+                <field name="name"/>
+                <field name="salesperson_id"/>
+                <field name="invoice_id"/>
+                <field name="invoice_partner_id"/>
+                <field name="rule_id"/>
+                <filter string="Draft" name="draft" domain="[('state','=','draft')]"/>
+                <filter string="Confirmed" name="confirmed" domain="[('state','=','confirmed')]"/>
+                <filter string="Invoiced" name="invoiced" domain="[('state','=','invoiced')]"/>
+                <filter string="Cancelled" name="cancelled" domain="[('state','=','cancelled')]"/>
+                <separator/>
+                <filter string="This Month" name="this_month"
+                        domain="[('date','&gt;=', (context_today()).strftime('%Y-%m-01')),
+                                 ('date','&lt;=', (context_today()).strftime('%Y-%m-30'))]"/>
+                <filter string="This Year" name="this_year"
+                        domain="[('date','&gt;=', (context_today()).strftime('%Y-01-01'))]"/>
+                <separator/>
+                <filter string="Group by Salesperson" name="group_salesperson"
+                        context="{'group_by': 'salesperson_id'}"/>
+                <filter string="Group by Commission Type" name="group_type"
+                        context="{'group_by': 'commission_type'}"/>
+                <filter string="Group by Month" name="group_date"
+                        context="{'group_by': 'date:month'}"/>
+                <filter string="Group by Status" name="group_state"
+                        context="{'group_by': 'state'}"/>
+                <filter string="Group by Rule" name="group_rule"
+                        context="{'group_by': 'rule_id'}"/>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action: All Commission Lines -->
+    <record id="action_commission_line" model="ir.actions.act_window">
+        <field name="name">Commission Lines</field>
+        <field name="res_model">commission.line</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_confirmed': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No commission lines yet
+            </p>
+            <p>
+                Commission lines are created automatically when an invoice is paid
+                and a matching commission rule exists for the salesperson.
+            </p>
+        </field>
+    </record>
+
+    <!-- Action: My Commission Lines -->
+    <record id="action_my_commission_line" model="ir.actions.act_window">
+        <field name="name">My Commissions</field>
+        <field name="res_model">commission.line</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('salesperson_id', '=', uid)]</field>
+        <field name="context">{'search_default_confirmed': 1}</field>
+    </record>
+
+    <!-- Stat button on account.move form (commission lines) -->
+   <record id="view_account_move_commission_button" model="ir.ui.view">
+        <field name="name">account.move.commission.button</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_move_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+               <button name="action_view_commissions" type="object"
+                        class="oe_stat_button" icon="fa-usd"
+                        invisible="move_type != 'out_invoice' or payment_state != 'paid'">
+                    <field name="commission_count" widget="statinfo" string="Commissions"/>
+               </button>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

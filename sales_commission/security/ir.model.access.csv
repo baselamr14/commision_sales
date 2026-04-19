@@ -1,0 +1,8 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_commission_rule_manager,commission.rule manager,model_commission_rule,sales_team.group_sale_manager,1,1,1,1
+access_commission_rule_user,commission.rule user,model_commission_rule,sales_team.group_sale_salesman,1,0,0,0
+access_commission_line_manager,commission.line manager,model_commission_line,sales_team.group_sale_manager,1,1,1,1
+access_commission_line_user,commission.line user,model_commission_line,sales_team.group_sale_salesman,1,1,0,0
+access_commission_invoice_wizard_all,commission.invoice.wizard all,model_commission_invoice_wizard,sales_team.group_sale_manager,1,1,1,1
+access_commission_report_manager,commission.report manager,model_commission_report,sales_team.group_sale_manager,1,0,0,0
+access_commission_report_user,commission.report user,model_commission_report,sales_team.group_sale_salesman,1,0,0,0
