@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--
+        The 'type' field on sale.commission.plan.achievement already renders
+        as a Selection widget on the achievement tab of the commission plan form.
+        Because we used selection_add in Python, the new option
+        'Margin (Paid Invoices)' automatically appears in the dropdown.
+
+        This view only adds a small informational note below the achievement
+        tab to remind users what the new type means.  It is optional — the
+        module works perfectly without it.
+    -->
+    <record id="view_sale_commission_plan_form_inherit_margin_paid"
+            model="ir.ui.view">
+        <field name="name">sale.commission.plan.form.margin.paid</field>
+        <field name="model">sale.commission.plan</field>
+        <field name="inherit_id"
+               ref="sale_commission.sale_commission_plan_view_form"/>
+        <field name="arch" type="xml">
+            <!-- Inject a help note at the bottom of the Achievements tab -->
+            <xpath expr="//page[@name='achievements']" position="inside">
+                <div class="alert alert-info" role="alert"
+                     style="margin-top:8px;">
+                    <strong>Margin (Paid Invoices)</strong> — commissions are
+                    calculated on the profit margin
+                    <em>(invoiced amount − product cost)</em> of invoices
+                    whose payment status is <strong>Paid</strong> or
+                    <strong>In Payment</strong>.  Draft and posted-but-unpaid
+                    invoices are excluded.
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>
