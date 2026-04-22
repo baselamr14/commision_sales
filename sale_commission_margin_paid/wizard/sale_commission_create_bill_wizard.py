@@ -135,9 +135,9 @@ class SaleCommissionCreateBillWizard(models.TransientModel):
                 "source_invoice_id": source_res_id if line.related_res_model == "account.move" else False,
                 "customer_id": line.partner_id.id,
                 "date": line.date,
-                "commission_amount": line.achieved,
+                "commission_amount": line.achieved or 0.0,
                 "currency_id": line.currency_id.id,
-                "display_name": str(source_res_id),
+                "reference": str(source_res_id) if source_res_id else "",
             }))
 
         if not wizard_lines:
@@ -161,9 +161,6 @@ class SaleCommissionCreateBillWizard(models.TransientModel):
         if not selected_lines:
             raise UserError(_("Please select at least one commission line to invoice."))
 
-        if any(line.commission_amount <= 0 for line in selected_lines):
-            raise UserError(_("Selected lines must have positive commission amounts."))
-
         if not self.journal_id:
             raise UserError(_("Please choose a purchase journal."))
 
@@ -174,13 +171,17 @@ class SaleCommissionCreateBillWizard(models.TransientModel):
         map_vals_list = []
 
         for line in selected_lines:
-            description = _("Commission - %(ref)s", ref=line.display_name or line.source_res_id)
+            amount = line.commission_amount or 0.0
+            if amount <= 0:
+                raise UserError(_("Selected lines must have positive commission amounts."))
+
+            description = _("Commission - %(ref)s", ref=line.reference or line.source_res_id)
 
             invoice_line_commands.append((0, 0, {
                 "product_id": self.commission_product_id.id,
                 "name": description,
                 "quantity": 1.0,
-                "price_unit": line.commission_amount,
+                "price_unit": amount,
             }))
 
             map_vals_list.append({
@@ -193,7 +194,7 @@ class SaleCommissionCreateBillWizard(models.TransientModel):
                 "source_invoice_id": line.source_invoice_id.id if line.source_invoice_id else False,
                 "source_date": line.date,
                 "customer_id": line.customer_id.id,
-                "achieved_amount": line.commission_amount,
+                "achieved_amount": amount,
                 "currency_id": line.currency_id.id,
                 "company_id": self.env.company.id,
                 "state": "draft",
@@ -246,6 +247,9 @@ class SaleCommissionCreateBillWizardLine(models.TransientModel):
 
     customer_id = fields.Many2one("res.partner", string="Customer")
     date = fields.Date(string="Date")
-    commission_amount = fields.Monetary(string="Commission Amount", currency_field="currency_id")
+    commission_amount = fields.Monetary(
+        string="Commission Amount",
+        currency_field="currency_id",
+    )
     currency_id = fields.Many2one("res.currency", string="Currency")
-    display_name = fields.Char(string="Reference")
+    reference = fields.Char(string="Reference")
