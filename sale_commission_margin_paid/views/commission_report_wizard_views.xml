@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_sale_commission_report_wizard_form" model="ir.ui.view">
+        <field name="name">sale.commission.report.wizard.form</field>
+        <field name="model">sale.commission.report.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Commission Report">
+                <group col="2">
+                    <field name="date_from"/>
+                    <field name="date_to"/>
+                    <field name="salesperson_id"/>
+                    <field name="customer_id"/>
+                    <field name="only_positive"/>
+                </group>
+
+                <footer>
+                    <button name="action_view_lines"
+                            string="View Lines"
+                            type="object"
+                            class="btn-primary"/>
+
+                    <button name="action_open_create_vendor_bill"
+                            string="Create Vendor Bill"
+                            type="object"
+                            class="btn-secondary"/>
+
+                    <button name="action_print_pdf"
+                            string="Print PDF"
+                            type="object"
+                            class="btn-secondary"/>
+
+                    <button name="action_export_xlsx"
+                            string="Export XLSX"
+                            type="object"
+                            class="btn-secondary"/>
+
+                    <button string="Cancel"
+                            special="cancel"
+                            class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_sale_commission_report_wizard" model="ir.actions.act_window">
+        <field name="name">Commission Report</field>
+        <field name="res_model">sale.commission.report.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+</odoo>
