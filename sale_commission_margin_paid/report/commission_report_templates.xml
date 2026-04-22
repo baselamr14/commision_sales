@@ -42,7 +42,7 @@
                                 <t t-set="total" t-value="total + (line.achieved or 0.0)"/>
                                 <td><span t-esc="line.date"/></td>
                                 <td><span t-esc="line.user_id.name"/></td>
-                                <td><span t-esc="line.related_res_name or line.related_res_id"/></td>
+                                <td><span t-esc="line.related_res_id"/></td>
                                 <td><span t-esc="line.partner_id.name"/></td>
                                 <td><span t-esc="line.target_id.display_name"/></td>
                                 <td><span t-esc="line.target_id.period"/></td>
