@@ -47,14 +47,25 @@
         </field>
     </record>
 
-    <record id="action_sale_commission_create_bill_wizard" model="ir.actions.act_window">
+    <record id="action_sale_commission_create_bill_server" model="ir.actions.server">
         <field name="name">Create Vendor Bill</field>
-        <field name="res_model">sale.commission.create.bill.wizard</field>
-        <field name="view_mode">form</field>
-        <field name="target">new</field>
+        <field name="model_id" ref="sale_commission.model_sale_commission_achievement_report"/>
         <field name="binding_model_id" ref="sale_commission.model_sale_commission_achievement_report"/>
-        <field name="binding_type">action</field>
         <field name="binding_view_types">list</field>
-    </record>
+        <field name="state">code</field>
+        <field name="code">
+    action = {
+        "type": "ir.actions.act_window",
+        "name": "Create Vendor Bill",
+        "res_model": "sale.commission.create.bill.wizard",
+        "view_mode": "form",
+        "target": "new",
+        "context": {
+            "active_model": model._name,
+            "active_ids": records.ids,
+        },
+    }
+        </field>
+  </record>
 
 </odoo>
