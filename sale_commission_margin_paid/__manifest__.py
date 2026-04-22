@@ -15,6 +15,8 @@
     "data": [
         "security/ir.model.access.csv",
         "views/sale_commission_create_bill_wizard_views.xml",
+        "views/commission_report_wizard_views.xml",
+        "views/commission_report_menu.xml",
     ],
     "installable": True,
     "application": False,
