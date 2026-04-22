@@ -182,7 +182,7 @@ class CommissionReportWizard(models.TransientModel):
             "Source",
             "Customer",
             "Target",
-            "Period",
+            "Target Name",
             "Achieved",
             "Currency",
         ]
@@ -198,8 +198,8 @@ class CommissionReportWizard(models.TransientModel):
             sheet.write(row, 1, line.user_id.name or "", cell_format)
             sheet.write(row, 2, str(line.related_res_id or ""), cell_format)
             sheet.write(row, 3, line.partner_id.name or "", cell_format)
-            sheet.write(row, 4, line.target_id.display_name or "", cell_format)
-            sheet.write(row, 5, line.target_id.period or "", cell_format)
+            sheet.write(row, 4, line.target_id.id or 0, cell_format)
+            sheet.write(row, 5, line.target_id.display_name or "", cell_format)
             sheet.write_number(row, 6, line.achieved or 0.0, amount_format)
             sheet.write(row, 7, line.currency_id.name or "", cell_format)
 
@@ -213,8 +213,8 @@ class CommissionReportWizard(models.TransientModel):
         sheet.set_column(1, 1, 22)
         sheet.set_column(2, 2, 28)
         sheet.set_column(3, 3, 24)
-        sheet.set_column(4, 4, 24)
-        sheet.set_column(5, 5, 16)
+        sheet.set_column(4, 4, 14)
+        sheet.set_column(5, 5, 24)
         sheet.set_column(6, 6, 14)
         sheet.set_column(7, 7, 12)
 
