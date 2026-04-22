@@ -10,15 +10,15 @@
                         <tbody>
                             <tr>
                                 <td><strong>Start Date</strong></td>
-                                <td><span t-esc="data.get('date_from')"/></td>
+                                <td><span t-esc="docs.date_from"/></td>
                                 <td><strong>End Date</strong></td>
-                                <td><span t-esc="data.get('date_to')"/></td>
+                                <td><span t-esc="docs.date_to"/></td>
                             </tr>
                             <tr>
                                 <td><strong>Salesperson</strong></td>
-                                <td><span t-esc="data.get('salesperson_name') or ''"/></td>
+                                <td><span t-esc="docs.salesperson_id.name or ''"/></td>
                                 <td><strong>Customer</strong></td>
-                                <td><span t-esc="data.get('customer_name') or ''"/></td>
+                                <td><span t-esc="docs.customer_id.name or ''"/></td>
                             </tr>
                         </tbody>
                     </table>
