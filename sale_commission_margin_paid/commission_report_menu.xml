@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_sale_commission_report_wizard"
+        name="Commission Report"
+        parent="sale_commission.sale_commission_menu_root"
+        action="action_sale_commission_report_wizard"
+        sequence="99"/>
+
+</odoo>
