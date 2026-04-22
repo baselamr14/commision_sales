@@ -126,19 +126,18 @@ class SaleCommissionCreateBillWizard(models.TransientModel):
 
             kept_lines |= line
             wizard_lines.append((0, 0, {
-                "selected": True,
-                "report_line_id": line.id,
-                "target_id": line.target_id.id,
-                "plan_id": line.plan_id.id,
-                "source_model": line.related_res_model,
-                "source_res_id": source_res_id,
-                "source_invoice_id": source_res_id if line.related_res_model == "account.move" else False,
-                "customer_id": line.partner_id.id,
-                "date": line.date,
-                "commission_amount": line.achieved or 0.0,
-                "currency_id": line.currency_id.id,
-                "reference": str(source_res_id) if source_res_id else "",
-            }))
+                    "selected": True,
+                    "target_id": line.target_id.id,
+                    "plan_id": line.plan_id.id,
+                    "source_model": line.related_res_model,
+                    "source_res_id": source_res_id,
+                    "source_invoice_id": source_res_id if line.related_res_model == "account.move" else False,
+                    "customer_id": line.partner_id.id,
+                    "date": line.date,
+                    "commission_amount": line.achieved or 0.0,
+                    "currency_id": line.currency_id.id,
+                    "reference": str(source_res_id) if source_res_id else "",
+                }))
 
         if not wizard_lines:
             raise UserError(_("All selected commission lines are already invoiced."))
