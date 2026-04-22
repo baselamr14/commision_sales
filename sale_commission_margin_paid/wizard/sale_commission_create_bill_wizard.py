@@ -225,7 +225,6 @@ class SaleCommissionCreateBillWizard(models.TransientModel):
             "target": "current",
         }
 
-
 class SaleCommissionCreateBillWizardLine(models.TransientModel):
     _name = "sale.commission.create.bill.wizard.line"
     _description = "Create Commission Vendor Bill Line"
@@ -237,7 +236,6 @@ class SaleCommissionCreateBillWizardLine(models.TransientModel):
     )
     selected = fields.Boolean(default=True)
 
-    report_line_id = fields.Integer(string="Report Line ID")
     target_id = fields.Many2one("sale.commission.plan.target", string="Target")
     plan_id = fields.Many2one("sale.commission.plan", string="Plan")
 
@@ -253,3 +251,5 @@ class SaleCommissionCreateBillWizardLine(models.TransientModel):
     )
     currency_id = fields.Many2one("res.currency", string="Currency")
     reference = fields.Char(string="Reference")
+
+ 
