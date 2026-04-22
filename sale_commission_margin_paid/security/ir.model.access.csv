@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_sale_commission_invoice_map_user,sale.commission.invoice.map.user,model_sale_commission_invoice_map,base.group_user,1,1,1,0
+access_sale_commission_create_bill_wizard,sale.commission.create.bill.wizard,model_sale_commission_create_bill_wizard,base.group_user,1,1,1,1
+access_sale_commission_create_bill_wizard_line,sale.commission.create.bill.wizard.line,model_sale_commission_create_bill_wizard_line,base.group_user,1,1,1,1
