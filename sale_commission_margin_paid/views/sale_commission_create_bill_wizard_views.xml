@@ -53,19 +53,19 @@
         <field name="binding_model_id" ref="sale_commission.model_sale_commission_achievement_report"/>
         <field name="binding_view_types">list</field>
         <field name="state">code</field>
-        <field name="code">
-    action = {
-        "type": "ir.actions.act_window",
-        "name": "Create Vendor Bill",
-        "res_model": "sale.commission.create.bill.wizard",
-        "view_mode": "form",
-        "target": "new",
-        "context": {
-            "active_model": model._name,
-            "active_ids": records.ids,
-        },
-    }
-        </field>
-  </record>
+        <field name="code"><![CDATA[
+action = {
+    "type": "ir.actions.act_window",
+    "name": "Create Vendor Bill",
+    "res_model": "sale.commission.create.bill.wizard",
+    "view_mode": "form",
+    "target": "new",
+    "context": {
+        "active_model": model._name,
+        "active_ids": records.ids,
+    },
+}
+        ]]></field>
+    </record>
 
 </odoo>
