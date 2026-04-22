@@ -12,7 +12,10 @@
         "sale_margin",
         "account",
     ],
-    "data": [],
+    "data": [
+        "security/ir.model.access.csv",
+        "views/sale_commission_create_bill_wizard_views.xml",
+    ],
     "installable": True,
     "application": False,
 }
