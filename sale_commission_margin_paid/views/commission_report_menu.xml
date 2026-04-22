@@ -4,7 +4,7 @@
     <menuitem
         id="menu_sale_commission_report_wizard"
         name="Commission Report"
-        parent="sale_commission.sale_commission_menu_root"
+        parent="sale_commission.menu_sale_commission"
         action="action_sale_commission_report_wizard"
         sequence="99"/>
 
