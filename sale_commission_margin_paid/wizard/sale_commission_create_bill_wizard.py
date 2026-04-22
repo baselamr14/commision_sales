@@ -77,29 +77,29 @@ class SaleCommissionCreateBillWizard(models.TransientModel):
     @api.model
     def default_get(self, fields_list):
         res = super().default_get(fields_list)
-    
+
         if self.env.context.get("active_model") != "sale.commission.achievement.report":
             raise UserError(_("This wizard must be opened from commission achievement lines."))
-    
+
         active_ids = self.env.context.get("active_ids", [])
         if not active_ids:
             raise UserError(_("Please select at least one commission line."))
-    
+
         lines = self.env["sale.commission.achievement.report"].browse(active_ids).exists()
         if not lines:
             raise UserError(_("Selected commission lines were not found."))
-    
+
         users = lines.mapped("user_id")
         if len(users) != 1:
             raise UserError(_("Please select commission lines for one salesperson only."))
-    
+
         salesperson = users[0]
         partner = salesperson.partner_id
         if not partner:
             raise UserError(_("The selected salesperson does not have a linked partner."))
-    
-        source_res_ids = [line.related_res_id.id for line in lines if line.related_res_id]
-    
+
+        source_res_ids = [line.related_res_id for line in lines if line.related_res_id]
+
         existing_maps = self.env["sale.commission.invoice.map"].search([
             ("user_id", "=", salesperson.id),
             ("plan_id", "in", lines.mapped("plan_id").ids),
@@ -108,22 +108,22 @@ class SaleCommissionCreateBillWizard(models.TransientModel):
             ("source_res_id", "in", source_res_ids),
             ("state", "=", "invoiced"),
         ])
-    
+
         already_invoiced_keys = {
             (m.plan_id.id, m.target_id.id, m.source_model, m.source_res_id)
             for m in existing_maps
         }
-    
+
         wizard_lines = []
         kept_lines = self.env["sale.commission.achievement.report"]
-    
+
         for line in lines:
-            source_res_id = line.related_res_id.id if line.related_res_id else False
+            source_res_id = line.related_res_id or False
             key = (line.plan_id.id, line.target_id.id, line.related_res_model, source_res_id)
-    
+
             if key in already_invoiced_keys:
                 continue
-    
+
             kept_lines |= line
             wizard_lines.append((0, 0, {
                 "selected": True,
@@ -137,12 +137,12 @@ class SaleCommissionCreateBillWizard(models.TransientModel):
                 "date": line.date,
                 "commission_amount": line.achieved,
                 "currency_id": line.currency_id.id,
-                "display_name": line.related_res_id.display_name if line.related_res_id else str(source_res_id),
+                "display_name": str(source_res_id),
             }))
-    
+
         if not wizard_lines:
             raise UserError(_("All selected commission lines are already invoiced."))
-    
+
         dates = kept_lines.mapped("date")
         res.update({
             "salesperson_id": salesperson.id,
@@ -153,6 +153,7 @@ class SaleCommissionCreateBillWizard(models.TransientModel):
             "line_ids": wizard_lines,
         })
         return res
+
     def action_create_vendor_bill(self):
         self.ensure_one()
 
