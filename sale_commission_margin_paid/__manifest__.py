@@ -17,6 +17,8 @@
         "views/sale_commission_create_bill_wizard_views.xml",
         "views/commission_report_wizard_views.xml",
         "views/commission_report_menu.xml",
+        "report/commission_report_pdf.xml",
+        "report/commission_report_templates.xml",
     ],
     "installable": True,
     "application": False,
