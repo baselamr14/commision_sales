@@ -191,13 +191,12 @@ class CommissionReportWizard(models.TransientModel):
             sheet.write(row, col, header, header_format)
 
         row += 1
-
         total_amount = 0.0
 
         for line in lines:
             sheet.write(row, 0, str(line.date or ""), date_format)
             sheet.write(row, 1, line.user_id.name or "", cell_format)
-            sheet.write(row, 2, line.related_res_name or str(line.related_res_id or ""), cell_format)
+            sheet.write(row, 2, str(line.related_res_id or ""), cell_format)
             sheet.write(row, 3, line.partner_id.name or "", cell_format)
             sheet.write(row, 4, line.target_id.display_name or "", cell_format)
             sheet.write(row, 5, line.target_id.period or "", cell_format)
