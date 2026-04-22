@@ -7,16 +7,21 @@ class ReportCommissionReportPdf(models.AbstractModel):
 
     @api.model
     def _get_report_values(self, docids, data=None):
-        wizard = self.env["sale.commission.report.wizard"].browse(docids)
-        wizard.ensure_one()
+        data = data or {}
 
-        line_ids = (data or {}).get("line_ids", [])
-        lines = self.env["sale.commission.achievement.report"].browse(line_ids)
+        wizard_id = data.get("wizard_id")
+        if wizard_id:
+            wizard = self.env["sale.commission.report.wizard"].browse(wizard_id)
+        else:
+            wizard = self.env["sale.commission.report.wizard"].browse(docids[:1])
+
+        lines = self.env["sale.commission.achievement.report"].browse(
+            data.get("line_ids", [])
+        )
 
         return {
-            "doc_ids": docids,
+            "doc_ids": wizard.ids,
             "doc_model": "sale.commission.report.wizard",
             "docs": wizard,
-            "data": data or {},
             "lines": lines,
         }
