@@ -5,7 +5,7 @@
         <field name="name">sale.commission.create.bill.wizard.form</field>
         <field name="model">sale.commission.create.bill.wizard</field>
         <field name="arch" type="xml">
-            <form string="Create Commission Invoice">
+            <form string="Create Vendor Bill">
                 <group string="Filters" col="2">
                     <field name="salesperson_id" readonly="1"/>
                     <field name="commission_product_id"/>
@@ -22,7 +22,7 @@
                 <field name="line_ids" nolabel="1">
                     <list create="0" delete="0">
                         <field name="selected"/>
-                        <field name="display_name" string="Reference" readonly="1"/>
+                        <field name="reference" string="Reference" readonly="1"/>
                         <field name="source_invoice_id" string="Invoice" readonly="1"/>
                         <field name="customer_id" string="Customer" readonly="1"/>
                         <field name="date" readonly="1"/>
