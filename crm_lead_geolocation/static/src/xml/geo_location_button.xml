@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="crm_lead_geolocation.GeoLocationButton">
+        <div class="o_geo_location_button">
+            <button type="button" class="btn btn-primary" t-on-click="onClickGetLocation">
+                <i class="fa fa-crosshairs me-1"/>
+                Get Current Location
+            </button>
+        </div>
+    </t>
+</templates>
