@@ -6,17 +6,19 @@
         <field name="inherit_id" ref="crm.crm_lead_view_form"/>
         <field name="arch" type="xml">
 
-            <!-- Add location block near the address fields -->
+            <!-- Show map link near address -->
             <xpath expr="//field[@name='street']" position="after">
-                <field name="geo_map_url" widget="url" readonly="1"/>
+                <field name="geo_map_url" string="Google Map" widget="url" readonly="1"/>
             </xpath>
 
+            <!-- Show map link also inside GPS section -->
             <xpath expr="//sheet//group" position="inside">
                 <group string="GPS Location">
                     <field name="geo_latitude" readonly="1"/>
                     <field name="geo_longitude" readonly="1"/>
                     <field name="geo_accuracy" readonly="1"/>
                     <field name="geo_location_fetched_at" readonly="1"/>
+                    <field name="geo_map_url" string="Google Map" widget="url" readonly="1"/>
                     <field name="name" widget="geo_location_button" nolabel="1"/>
                 </group>
             </xpath>
