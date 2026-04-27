@@ -4,6 +4,8 @@ from odoo import fields, models
 class SaleCommissionPlanAchievement(models.Model):
     _inherit = "sale.commission.plan.achievement"
 
+    commission_rate = fields.Float(string="Commission %", default=10.0)
+
     type = fields.Selection(
         selection_add=[("margin_paid", "Margin (Paid Invoices)")],
         ondelete={"margin_paid": "cascade"},
@@ -31,3 +33,12 @@ class SaleCommissionPlanAchievement(models.Model):
 
         lines = self.env["account.move.line"].search(domain)
         return sum(lines.mapped("margin_paid_base"))
+
+   def _compute_commission(self, amount, achieved):
+    self.ensure_one()
+
+    if self.type == "margin_paid":
+        rate = self.commission_rate or 0.0
+        return achieved * (rate / 100)
+
+    return super()._compute_commission(amount, achieved)
