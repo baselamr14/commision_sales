@@ -33,4 +33,10 @@ class SaleCommissionPlanAchievement(models.Model):
         lines = self.env["account.move.line"].search(domain)
         return sum(lines.mapped("margin_paid_base"))
 
+    def _compute_commission(self, amount, achieved):
+        self.ensure_one()
+        if self.type == "margin_paid":
+            return achieved  # commission = achieved (rate already applied)
+        return super()._compute_commission(amount, achieved)
+
    
