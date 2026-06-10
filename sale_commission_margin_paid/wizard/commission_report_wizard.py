@@ -78,46 +78,37 @@ class CommissionReportWizard(models.TransientModel):
     def _get_report_lines(self):
         self.ensure_one()
     
-        # Step 1: fetch all lines matching the base domain
         lines = self.env["sale.commission.achievement.report"].search(
             self._get_domain(),
             order="date asc, user_id asc, id asc",
         )
     
-        if not lines:
-            return lines
+        _logger.warning("=== DEBUG commission_type: %s", self.commission_type)
+        _logger.warning("=== DEBUG total lines before filter: %s", len(lines))
+        for l in lines:
+            _logger.warning(
+                "=== LINE: user=%s | related_res_id=%s | related_res_model=%s",
+                l.user_id.name,
+                l.related_res_id,
+                l.related_res_model if hasattr(l, 'related_res_model') else 'NO FIELD',
+            )
     
-        # Step 2: get the invoice IDs linked to these lines
         move_ids = lines.mapped("related_res_id")
+        _logger.warning("=== DEBUG move_ids: %s", move_ids)
     
-        if not move_ids:
-            return lines
+        paid_moves = self.env["account.move"].search([
+            ("id", "in", move_ids),
+            ("payment_state", "=", "paid"),
+        ])
+        _logger.warning("=== DEBUG paid_moves found: %s", paid_moves.ids)
     
-        # Step 3: filter account.move records by payment_state
-        if self.commission_type == "paid":
-            valid_moves = self.env["account.move"].search([
-                ("id", "in", move_ids),
-                ("payment_state", "=", "paid"),
-            ])
-        elif self.commission_type == "posted":
-            valid_moves = self.env["account.move"].search([
-                ("id", "in", move_ids),
-                ("payment_state", "!=", "paid"),
-            ])
-        else:
-            valid_moves = self.env["account.move"].search([
-                ("id", "in", move_ids),
-            ])
+        posted_moves = self.env["account.move"].search([
+            ("id", "in", move_ids),
+            ("payment_state", "!=", "paid"),
+        ])
+        _logger.warning("=== DEBUG posted_moves found: %s", posted_moves.ids)
     
-        valid_move_ids = set(valid_moves.ids)
-    
-        # Step 4: keep only lines whose invoice is in the valid set
-        filtered_lines = lines.filtered(
-            lambda l: l.related_res_id in valid_move_ids
-        )
-    
-        return filtered_lines
-
+        return lines
     def _prepare_report_data(self):
         self.ensure_one()
         lines = self._get_report_lines()
