@@ -10,23 +10,44 @@ class SaleCommissionPlanAchievement(models.Model):
     _inherit = "sale.commission.plan.achievement"
 
     type = fields.Selection(
-        selection_add=[("margin_paid", "Margin (Paid Invoices)")],
-        ondelete={"margin_paid": "cascade"},
+        selection_add=[
+            ("margin_paid", "Margin (Paid Invoices)"),
+            ("margin_posted", "Margin (Posted Invoices)"),  # ✅ NEW
+        ],
+        ondelete={
+            "margin_paid": "cascade",
+            "margin_posted": "cascade",                     # ✅ NEW
+        },
     )
 
 
 class SaleCommissionAchievementReport(models.Model):
     _inherit = "sale.commission.achievement.report"
 
+    # ✅ NEW: virtual field so the wizard domain filter can resolve payment state
+    invoice_payment_state = fields.Char(
+        string="Invoice Payment State",
+        compute="_compute_invoice_payment_state",
+        store=False,
+    )
+
+    def _compute_invoice_payment_state(self):
+        for rec in self:
+            move = self.env["account.move"].browse(rec.related_res_id) if rec.related_res_id else None
+            rec.invoice_payment_state = move.payment_state if move and move.exists() else False
+
     @api.model
     def _get_invoices_rates(self):
-        _logger.warning("CUSTOM _get_invoices_rates CALLED")
         rates = super()._get_invoices_rates()
-        return rates + ["margin_paid"]
+        # ✅ CHANGED: register both custom rate types
+        for rate in ("margin_paid", "margin_posted"):
+            if rate not in rates:
+                rates.append(rate)
+        return rates
 
     @api.model
     def _get_filtered_moves_cte(self, users=None, teams=None):
-        _logger.warning("CUSTOM _get_filtered_moves_cte CALLED")
+        # unchanged — same CTE as before
         date_from, date_to = self._get_achievement_default_dates()
         today = fields.Date.today().strftime("%Y-%m-%d")
         date_from_str = date_from and datetime.strftime(date_from, "%Y-%m-%d")
@@ -58,7 +79,6 @@ class SaleCommissionAchievementReport(models.Model):
 
     @api.model
     def _get_invoice_rates_product(self):
-        _logger.warning("CUSTOM _get_invoice_rates_product CALLED")
         return """
         CASE
             WHEN fm.move_type = 'out_invoice' THEN
@@ -74,7 +94,15 @@ class SaleCommissionAchievementReport(models.Model):
                             )
                         ) / fm.invoice_currency_rate
                     ELSE 0
-                END
+                END +
+                /* ✅ NEW: margin_posted_rate applies to ALL posted invoices */
+                rules.margin_posted_rate * (
+                    aml.price_subtotal
+                    - (
+                        aml.quantity
+                        * COALESCE((pp.standard_price ->> fm.company_id::text)::numeric, 0.0)
+                    )
+                ) / fm.invoice_currency_rate
             WHEN fm.move_type = 'out_refund' THEN
                 (
                     rules.amount_invoiced_rate * aml.price_subtotal / fm.invoice_currency_rate +
@@ -89,14 +117,21 @@ class SaleCommissionAchievementReport(models.Model):
                                 )
                             ) / fm.invoice_currency_rate
                         ELSE 0
-                    END
+                    END +
+                    /* ✅ NEW: same for refunds */
+                    rules.margin_posted_rate * (
+                        aml.price_subtotal
+                        - (
+                            aml.quantity
+                            * COALESCE((pp.standard_price ->> fm.company_id::text)::numeric, 0.0)
+                        )
+                    ) / fm.invoice_currency_rate
                 ) * -1
         END
         """
 
     @api.model
     def _invoices_lines(self, users=None, teams=None):
-        _logger.warning("CUSTOM _invoices_lines CALLED")
         return f"""
 {self._get_filtered_moves_cte(users=users, teams=teams)},
 invoices_rules AS (
@@ -135,14 +170,13 @@ invoice_commission_lines_team AS (
       AND fm.date BETWEEN rules.date_from AND rules.date_to
       AND (rules.product_id IS NULL OR rules.product_id = aml.product_id)
       AND (rules.product_categ_id IS NULL OR rules.product_categ_id = pt.categ_id)
+      /* ✅ CHANGED: margin_paid still requires payment, margin_posted does not */
       AND (
-            rules.margin_paid_rate = 0
-            OR fm.payment_state = 'paid'
+            (rules.margin_paid_rate = 0 OR fm.payment_state = 'paid')
+            AND
+            rules.margin_posted_rate >= 0
           )
-    GROUP BY
-        fm.id,
-        rules.plan_id,
-        rules.user_id
+    GROUP BY fm.id, rules.plan_id, rules.user_id
 ),
 invoice_commission_lines_user AS (
     SELECT
@@ -157,14 +191,13 @@ invoice_commission_lines_user AS (
       AND fm.date BETWEEN rules.date_from AND rules.date_to
       AND (rules.product_id IS NULL OR rules.product_id = aml.product_id)
       AND (rules.product_categ_id IS NULL OR rules.product_categ_id = pt.categ_id)
+      /* ✅ CHANGED: same guard as team lines above */
       AND (
-            rules.margin_paid_rate = 0
-            OR fm.payment_state = 'paid'
+            (rules.margin_paid_rate = 0 OR fm.payment_state = 'paid')
+            AND
+            rules.margin_posted_rate >= 0
           )
-    GROUP BY
-        fm.id,
-        rules.plan_id,
-        rules.user_id
+    GROUP BY fm.id, rules.plan_id, rules.user_id
 ),
 invoice_commission_lines AS (
     (
