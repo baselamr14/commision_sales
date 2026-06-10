@@ -3,6 +3,10 @@ from odoo.exceptions import UserError
 
 import io
 import base64
+import logging          # ✅ ADD THIS
+
+_logger = logging.getLogger(__name__)   # ✅ ADD THIS
+
 import xlsxwriter
 
 
@@ -77,38 +81,42 @@ class CommissionReportWizard(models.TransientModel):
 
     def _get_report_lines(self):
         self.ensure_one()
-    
+
         lines = self.env["sale.commission.achievement.report"].search(
             self._get_domain(),
             order="date asc, user_id asc, id asc",
         )
-    
-        _logger.warning("=== DEBUG commission_type: %s", self.commission_type)
-        _logger.warning("=== DEBUG total lines before filter: %s", len(lines))
-        for l in lines:
-            _logger.warning(
-                "=== LINE: user=%s | related_res_id=%s | related_res_model=%s",
-                l.user_id.name,
-                l.related_res_id,
-                l.related_res_model if hasattr(l, 'related_res_model') else 'NO FIELD',
-            )
-    
+
+        if not lines:
+            return lines
+
         move_ids = lines.mapped("related_res_id")
-        _logger.warning("=== DEBUG move_ids: %s", move_ids)
-    
-        paid_moves = self.env["account.move"].search([
-            ("id", "in", move_ids),
-            ("payment_state", "=", "paid"),
-        ])
-        _logger.warning("=== DEBUG paid_moves found: %s", paid_moves.ids)
-    
-        posted_moves = self.env["account.move"].search([
-            ("id", "in", move_ids),
-            ("payment_state", "!=", "paid"),
-        ])
-        _logger.warning("=== DEBUG posted_moves found: %s", posted_moves.ids)
-    
-        return lines
+        if not move_ids:
+            return lines
+
+        # Build the two sets of invoice IDs
+        paid_move_ids = set(
+            self.env["account.move"].search([
+                ("id", "in", move_ids),
+                ("payment_state", "=", "paid"),
+            ]).ids
+        )
+        posted_move_ids = set(
+            self.env["account.move"].search([
+                ("id", "in", move_ids),
+                ("payment_state", "!=", "paid"),
+            ]).ids
+        )
+
+        # ✅ THE ACTUAL FILTER — this was missing in your version
+        if self.commission_type == "paid":
+            valid_move_ids = paid_move_ids
+        elif self.commission_type == "posted":
+            valid_move_ids = posted_move_ids
+        else:
+            valid_move_ids = paid_move_ids | posted_move_ids
+
+        return lines.filtered(lambda l: l.related_res_id in valid_move_ids)
     def _prepare_report_data(self):
         self.ensure_one()
         lines = self._get_report_lines()
@@ -132,7 +140,7 @@ class CommissionReportWizard(models.TransientModel):
 
     def action_view_lines(self):
         self.ensure_one()
-        domain = self._get_domain()
+        lines = self._get_report_lines()   # ✅ use the filtered lines
 
         return {
             "type": "ir.actions.act_window",
@@ -140,7 +148,7 @@ class CommissionReportWizard(models.TransientModel):
             "res_model": "sale.commission.achievement.report",
             "view_mode": "list,pivot,graph",
             "target": "current",
-            "domain": domain,
+            "domain": [("id", "in", lines.ids)],   # ✅ filter by exact IDs
             "context": {
                 "search_default_group_by_user_id": 1,
             },
