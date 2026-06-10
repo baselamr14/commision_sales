@@ -51,42 +51,72 @@ class CommissionReportWizard(models.TransientModel):
 
     def _get_domain(self):
         self.ensure_one()
-
+    
         if self.date_from and self.date_to and self.date_from > self.date_to:
             raise UserError(_("Start Date cannot be greater than End Date."))
-
+    
         domain = [
             ("date", ">=", self.date_from),
             ("date", "<=", self.date_to),
         ]
-
+    
         if self.salesperson_id:
             domain.append(("user_id", "=", self.salesperson_id.id))
-
+    
         if self.customer_ids:
             domain.append(("partner_id", "in", self.customer_ids.ids))
-
+    
         if self.only_positive:
             domain.append(("achieved", ">", 0))
-
-        return domain
-
-                # ✅ NEW: filter by commission type
-
-        
-        if self.commission_type == "paid":
-            domain.append(("invoice_payment_state", "=", "paid"))
-        elif self.commission_type == "posted":
-            domain.append(("invoice_payment_state", "!=", "paid"))
-
+    
+        # NOTE: commission_type filter is applied in _get_report_lines()
+        # directly against account_move, NOT here, because invoice_payment_state
+        # is a computed non-stored field and cannot be used in domain search.
+    
         return domain
 
     def _get_report_lines(self):
         self.ensure_one()
-        return self.env["sale.commission.achievement.report"].search(
+    
+        # Step 1: fetch all lines matching the base domain
+        lines = self.env["sale.commission.achievement.report"].search(
             self._get_domain(),
             order="date asc, user_id asc, id asc",
         )
+    
+        if not lines:
+            return lines
+    
+        # Step 2: get the invoice IDs linked to these lines
+        move_ids = lines.mapped("related_res_id")
+    
+        if not move_ids:
+            return lines
+    
+        # Step 3: filter account.move records by payment_state
+        if self.commission_type == "paid":
+            valid_moves = self.env["account.move"].search([
+                ("id", "in", move_ids),
+                ("payment_state", "=", "paid"),
+            ])
+        elif self.commission_type == "posted":
+            valid_moves = self.env["account.move"].search([
+                ("id", "in", move_ids),
+                ("payment_state", "!=", "paid"),
+            ])
+        else:
+            valid_moves = self.env["account.move"].search([
+                ("id", "in", move_ids),
+            ])
+    
+        valid_move_ids = set(valid_moves.ids)
+    
+        # Step 4: keep only lines whose invoice is in the valid set
+        filtered_lines = lines.filtered(
+            lambda l: l.related_res_id in valid_move_ids
+        )
+    
+        return filtered_lines
 
     def _prepare_report_data(self):
         self.ensure_one()
