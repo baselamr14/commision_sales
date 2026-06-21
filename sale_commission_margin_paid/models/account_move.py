@@ -86,20 +86,19 @@ class AccountMove(models.Model):
 
                 commission_map._create_accrual_journal_entry()
 
+   
     # ------------------------------------------------------------------ #
     #  2. Invoice Paid -> book the payable journal entry, moving the     #
     #     amount from the accrual account to the salesperson payable     #
     #     account.                                                       #
+    #                                                                    #
+    #  Detection happens at the point of reconciliation (see            #
+    #  account_move_line.py -> reconcile()), which is the single         #
+    #  chokepoint that BOTH "Register Payment" and bank-statement        #
+    #  reconciliation pass through. The write() override below is kept   #
+    #  as an additional trigger for any path that updates payment_state  #
+    #  directly, and the daily cron is a final safety net.               #
     # ------------------------------------------------------------------ #
-    def action_register_payment(self):
-        # Run the standard payment registration first; the wizard it
-        # returns is opened by the client, so the actual reconciliation
-        # (and the resulting payment_state change) happens after this
-        # method returns. We therefore detect newly-paid invoices via the
-        # write() override below, which fires once reconciliation sets
-        # payment_state to 'paid' or 'in_payment'.
-        return super().action_register_payment()
-
     def write(self, vals):
         # Capture the payment_state of each move BEFORE the write so we can
         # detect a transition into a settled state afterwards.
@@ -122,7 +121,6 @@ class AccountMove(models.Model):
             newly_settled._create_commission_payable_entries()
 
         return result
-
     def _create_commission_payable_entries(self):
         """For each invoice in self that just became fully paid, create
         the payable journal entry for every linked commission record
