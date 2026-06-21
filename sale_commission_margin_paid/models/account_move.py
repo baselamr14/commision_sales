@@ -101,17 +101,25 @@ class AccountMove(models.Model):
         return super().action_register_payment()
 
     def write(self, vals):
+        # Capture the payment_state of each move BEFORE the write so we can
+        # detect a transition into a settled state afterwards.
         previous_states = {move.id: move.payment_state for move in self}
+
         result = super().write(vals)
 
-        if "payment_state" in vals:
-            newly_paid = self.filtered(
-                lambda m: m.payment_state == "paid"
-                and previous_states.get(m.id) != "paid"
-                and m.move_type in ("out_invoice", "out_refund")
-            )
-            if newly_paid:
-                newly_paid._create_commission_payable_entries()
+        # payment_state is a computed-stored field, so a payment/
+        # reconciliation may update it without 'payment_state' appearing in
+        # this particular `vals`. We therefore re-read the current state of
+        # each move and compare against the snapshot, rather than relying on
+        # 'payment_state' being a key in vals.
+        settled_states = ("paid", "in_payment")
+        newly_settled = self.filtered(
+            lambda m: m.move_type in ("out_invoice", "out_refund")
+            and m.payment_state in settled_states
+            and previous_states.get(m.id) not in settled_states
+        )
+        if newly_settled:
+            newly_settled._create_commission_payable_entries()
 
         return result
 
@@ -134,3 +142,29 @@ class AccountMove(models.Model):
                 continue
 
             commission_maps._create_payable_journal_entry()
+    @api.model
+    def _cron_create_commission_payable_entries(self):
+        """Safety-net scheduled job: find every accrued commission whose
+        source invoice has since become settled (paid / in_payment) and
+        book the payable journal entry for it.
+
+        This guarantees the payable JE is eventually created even if the
+        write() hook missed the payment_state transition (which can happen
+        because payment_state is a computed-stored field updated during
+        reconciliation flushes).
+        """
+        InvoiceMap = self.env["sale.commission.invoice.map"]
+        settled_states = ("paid", "in_payment")
+
+        pending_maps = InvoiceMap.search([
+            ("journal_state", "=", "accrued"),
+            ("source_model", "=", "account.move"),
+            ("payable_move_id", "=", False),
+        ])
+
+        for commission_map in pending_maps:
+            invoice = self.browse(commission_map.source_res_id).exists()
+            if not invoice:
+                continue
+            if invoice.payment_state in settled_states:
+                commission_map._create_payable_journal_entry()
