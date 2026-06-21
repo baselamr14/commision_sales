@@ -334,3 +334,23 @@ class SaleCommissionInvoiceMap(models.Model):
                 or self.source_invoice_id.date
             )
         return fields.Date.context_today(self)
+    # ------------------------------------------------------------------ #
+    #  Manual action buttons                                             #
+    # ------------------------------------------------------------------ #
+    def action_create_accrual_entry(self):
+        """Manually book the accrual JE for the selected records."""
+        self._create_accrual_journal_entry()
+        return True
+
+    def action_create_payable_entry(self):
+        """Manually book the payable JE for the selected records.
+
+        Useful when the automatic payment detection missed the invoice's
+        payment_state transition. Only acts on records already accrued.
+        """
+        self._create_payable_journal_entry()
+        return True    
+
+
+
+
