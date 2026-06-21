@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_sale_commission_invoice_map_list" model="ir.ui.view">
+        <field name="name">sale.commission.invoice.map.list</field>
+        <field name="model">sale.commission.invoice.map</field>
+        <field name="arch" type="xml">
+            <list string="Commission Accounting">
+                <field name="source_date"/>
+                <field name="user_id"/>
+                <field name="customer_id"/>
+                <field name="reference"/>
+                <field name="achieved_amount" sum="Total"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="journal_state" widget="badge"
+                       decoration-info="journal_state == 'pending'"
+                       decoration-warning="journal_state == 'accrued'"
+                       decoration-success="journal_state == 'payable'"/>
+                <field name="accrual_move_id"/>
+                <field name="payable_move_id"/>
+                <field name="vendor_bill_id"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_sale_commission_invoice_map_form" model="ir.ui.view">
+        <field name="name">sale.commission.invoice.map.form</field>
+        <field name="model">sale.commission.invoice.map</field>
+        <field name="arch" type="xml">
+            <form string="Commission Accounting Entry">
+                <sheet>
+                    <group col="2">
+                        <group string="Commission">
+                            <field name="user_id"/>
+                            <field name="partner_id"/>
+                            <field name="customer_id"/>
+                            <field name="plan_id"/>
+                            <field name="target_id"/>
+                            <field name="source_invoice_id"/>
+                            <field name="source_date"/>
+                            <field name="achieved_amount"/>
+                            <field name="currency_id"/>
+                            <field name="reference"/>
+                            <field name="state"/>
+                        </group>
+                        <group string="Accounting">
+                            <field name="journal_state" widget="badge"/>
+                            <field name="accrual_move_id"/>
+                            <field name="payable_move_id"/>
+                            <field name="vendor_bill_id"/>
+                            <field name="vendor_bill_line_id"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_sale_commission_invoice_map" model="ir.actions.act_window">
+        <field name="name">Commission Accounting</field>
+        <field name="res_model">sale.commission.invoice.map</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_group_by_journal_state': 1}</field>
+    </record>
+
+    <menuitem id="menu_sale_commission_invoice_map"
+              name="Commission Accounting"
+              action="action_sale_commission_invoice_map"
+              parent="account.menu_finance_entries"
+              groups="account.group_account_user"
+              sequence="50"/>
+
+</odoo>

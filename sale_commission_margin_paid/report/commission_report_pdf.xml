@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="action_commission_report_pdf" model="ir.actions.report">
+        <field name="name">Commission Report</field>
+        <field name="model">sale.commission.report.wizard</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">sale_commission_margin_paid.report_commission_report_pdf</field>
+        <field name="report_file">sale_commission_margin_paid.report_commission_report_pdf</field>
+        <field name="print_report_name">'Commission Report - %s - %s' % (object.date_from or '', object.date_to or '')</field>
+        <field name="binding_model_id" ref="model_sale_commission_report_wizard"/>
+        <field name="binding_type">report</field>
+    </record>
+
+</odoo>

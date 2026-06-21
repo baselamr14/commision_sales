@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="res_config_settings_view_form_commission" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.commission.margin.paid</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base_setup.res_config_settings_view_form"/>
+        <field name="priority" eval="50"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[hasclass('settings')]" position="inside">
+                <div class="app_settings_block" data-string="Commissions"
+                     string="Commissions" data-key="sale_commission_margin_paid"
+                     groups="base.group_system">
+                    <h2>Commission Accounting</h2>
+                    <div class="row mt16 o_settings_container" id="commission_accounting_setting_container">
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_right_pane">
+                                <label for="commission_expense_account_id" string="Commission Expense Account"/>
+                                <div class="text-muted">
+                                    Debited when a commission is accrued, right after the source invoice is posted.
+                                </div>
+                                <field name="commission_expense_account_id"/>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_right_pane">
+                                <label for="commission_accrual_account_id" string="Commission Accrual Account"/>
+                                <div class="text-muted">
+                                    Liability account holding commissions earned but not yet payable.
+                                </div>
+                                <field name="commission_accrual_account_id"/>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_right_pane">
+                                <label for="commission_payable_account_id" string="Salesperson Payable Account"/>
+                                <div class="text-muted">
+                                    Credited once the source invoice is fully paid, representing the amount owed to the salesperson.
+                                </div>
+                                <field name="commission_payable_account_id"/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>
