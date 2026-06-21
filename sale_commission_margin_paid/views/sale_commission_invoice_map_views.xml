@@ -28,6 +28,20 @@
         <field name="model">sale.commission.invoice.map</field>
         <field name="arch" type="xml">
             <form string="Commission Accounting Entry">
+                <header>
+                    <button name="action_create_accrual_entry"
+                            string="Create Accrual Entry"
+                            type="object"
+                            class="btn-primary"
+                            invisible="journal_state != 'pending'"/>
+                    <button name="action_create_payable_entry"
+                            string="Create Payable Entry"
+                            type="object"
+                            class="btn-primary"
+                            invisible="journal_state != 'accrued'"/>
+                    <field name="journal_state" widget="statusbar"
+                           statusbar_visible="pending,accrued,payable"/>
+                </header>
                 <sheet>
                     <group col="2">
                         <group string="Commission">
@@ -44,7 +58,6 @@
                             <field name="state"/>
                         </group>
                         <group string="Accounting">
-                            <field name="journal_state" widget="badge"/>
                             <field name="accrual_move_id"/>
                             <field name="payable_move_id"/>
                             <field name="vendor_bill_id"/>
