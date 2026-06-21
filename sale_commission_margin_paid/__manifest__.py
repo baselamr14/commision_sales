@@ -15,6 +15,7 @@
     ],
     "data": [
         "security/ir.model.access.csv",
+        "data/commission_payable_cron.xml",
         "views/res_config_settings_views.xml",
         "views/sale_commission_invoice_map_views.xml",
         "views/sale_commission_create_bill_wizard_views.xml",
