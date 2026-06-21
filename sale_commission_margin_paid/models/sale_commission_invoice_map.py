@@ -216,7 +216,7 @@ class SaleCommissionInvoiceMap(models.Model):
             move = AccountMove.create({
                 "move_type": "entry",
                 "journal_id": journal.id,
-                "date": rec.source_date or fields.Date.context_today(rec),
+                "date": rec._get_commission_entry_date(),
                 "ref": _(
                     "Commission accrual - %(salesperson)s - %(ref)s",
                     salesperson=rec.user_id.name,
@@ -316,3 +316,21 @@ class SaleCommissionInvoiceMap(models.Model):
                   company=company.name)
             )
         return journal
+
+    def _get_commission_entry_date(self):
+        """Resolve the date to use for the accrual journal entry.
+
+        Priority: the record's stored commission date, then the source
+        invoice's own date, and only as a last resort today's date. This
+        keeps the accrual JE aligned with the invoice period rather than
+        defaulting to whenever the invoice happened to be posted.
+        """
+        self.ensure_one()
+        if self.source_date:
+            return self.source_date
+        if self.source_invoice_id:
+            return (
+                self.source_invoice_id.invoice_date
+                or self.source_invoice_id.date
+            )
+        return fields.Date.context_today(self)
