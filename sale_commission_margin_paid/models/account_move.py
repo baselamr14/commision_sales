@@ -76,7 +76,7 @@ class AccountMove(models.Model):
                         "source_model": "account.move",
                         "source_res_id": move.id,
                         "source_invoice_id": move.id,
-                        "source_date": line.date,
+                        "source_date": move.invoice_date or move.date or line.date,
                         "customer_id": line.partner_id.id,
                         "achieved_amount": line.achieved,
                         "currency_id": line.currency_id.id,
