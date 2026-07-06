@@ -68,22 +68,52 @@ class CommissionReportWizard(models.TransientModel):
         if self.only_positive:
             domain.append(("achieved", ">", 0))
 
-        # Filter by commission type
-        if self.commission_type == "paid":
-            # Only invoices that have been fully paid
-            domain.append(("invoice_payment_state", "=", "paid"))
-        elif self.commission_type == "posted":
-            # All posted invoices that are NOT yet paid
-            domain.append(("invoice_payment_state", "!=", "paid"))
+        # NOTE: the commission_type filter is intentionally NOT applied here.
+        # invoice_payment_state is a computed non-stored field and cannot be
+        # used in a domain search (Odoo 19 raises ValueError: "Cannot convert
+        # ... to SQL because it is not stored"). It is applied in Python in
+        # _get_report_lines() instead.
 
         return domain
 
     def _get_report_lines(self):
         self.ensure_one()
-        return self.env["sale.commission.achievement.report"].search(
+
+        lines = self.env["sale.commission.achievement.report"].search(
             self._get_domain(),
             order="date asc, user_id asc, id asc",
         )
+
+        if not lines:
+            return lines
+
+        move_ids = lines.mapped("related_res_id")
+        if not move_ids:
+            return lines
+
+        # Resolve payment state directly against account.move (reliable),
+        # then split the already-generated commission lines by type.
+        paid_move_ids = set(
+            self.env["account.move"].search([
+                ("id", "in", move_ids),
+                ("payment_state", "=", "paid"),
+            ]).ids
+        )
+        posted_move_ids = set(
+            self.env["account.move"].search([
+                ("id", "in", move_ids),
+                ("payment_state", "!=", "paid"),
+            ]).ids
+        )
+
+        if self.commission_type == "paid":
+            valid_move_ids = paid_move_ids
+        elif self.commission_type == "posted":
+            valid_move_ids = posted_move_ids
+        else:
+            valid_move_ids = paid_move_ids | posted_move_ids
+
+        return lines.filtered(lambda l: l.related_res_id in valid_move_ids)
 
     def _prepare_report_data(self):
         self.ensure_one()
@@ -108,7 +138,7 @@ class CommissionReportWizard(models.TransientModel):
 
     def action_view_lines(self):
         self.ensure_one()
-        domain = self._get_domain()
+        lines = self._get_report_lines()
 
         return {
             "type": "ir.actions.act_window",
@@ -116,7 +146,7 @@ class CommissionReportWizard(models.TransientModel):
             "res_model": "sale.commission.achievement.report",
             "view_mode": "list,pivot,graph",
             "target": "current",
-            "domain": domain,
+            "domain": [("id", "in", lines.ids)],
             "context": {
                 "search_default_group_by_user_id": 1,
             },
