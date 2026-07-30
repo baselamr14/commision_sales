@@ -12,11 +12,11 @@ class SaleCommissionPlanAchievement(models.Model):
     type = fields.Selection(
         selection_add=[
             ("margin_paid", "Margin (Paid Invoices)"),
-            ("margin_posted", "Margin (Posted Invoices)"),  # ✅ NEW
+            ("margin_posted", "Margin (Posted Invoices)"),
         ],
         ondelete={
             "margin_paid": "cascade",
-            "margin_posted": "cascade",                     # ✅ NEW
+            "margin_posted": "cascade",
         },
     )
 
@@ -24,7 +24,11 @@ class SaleCommissionPlanAchievement(models.Model):
 class SaleCommissionAchievementReport(models.Model):
     _inherit = "sale.commission.achievement.report"
 
-    # ✅ NEW: virtual field so the wizard domain filter can resolve payment state
+    # ------------------------------------------------------------------ #
+    #  invoice_payment_state: virtual field used for domain filtering in  #
+    #  the wizard – NOT stored in the view, but exposed as a computed     #
+    #  field so Odoo can apply domain filters against it.                 #
+    # ------------------------------------------------------------------ #
     invoice_payment_state = fields.Char(
         string="Invoice Payment State",
         compute="_compute_invoice_payment_state",
@@ -36,10 +40,14 @@ class SaleCommissionAchievementReport(models.Model):
             move = self.env["account.move"].browse(rec.related_res_id) if rec.related_res_id else None
             rec.invoice_payment_state = move.payment_state if move and move.exists() else False
 
+    # ------------------------------------------------------------------ #
+    #  SQL view helpers                                                   #
+    # ------------------------------------------------------------------ #
+
     @api.model
     def _get_invoices_rates(self):
         rates = super()._get_invoices_rates()
-        # ✅ CHANGED: register both custom rate types
+        # Add both custom rate types
         for rate in ("margin_paid", "margin_posted"):
             if rate not in rates:
                 rates.append(rate)
@@ -95,7 +103,6 @@ class SaleCommissionAchievementReport(models.Model):
                         ) / fm.invoice_currency_rate
                     ELSE 0
                 END +
-                /* ✅ NEW: margin_posted_rate applies to ALL posted invoices */
                 rules.margin_posted_rate * (
                     aml.price_subtotal
                     - (
@@ -118,7 +125,6 @@ class SaleCommissionAchievementReport(models.Model):
                             ) / fm.invoice_currency_rate
                         ELSE 0
                     END +
-                    /* ✅ NEW: same for refunds */
                     rules.margin_posted_rate * (
                         aml.price_subtotal
                         - (

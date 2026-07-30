@@ -3,10 +3,6 @@ from odoo.exceptions import UserError
 
 import io
 import base64
-import logging          # ✅ ADD THIS
-
-_logger = logging.getLogger(__name__)   # ✅ ADD THIS
-
 import xlsxwriter
 
 
@@ -36,7 +32,6 @@ class CommissionReportWizard(models.TransientModel):
         string="Only Positive Commissions",
         default=True,
     )
-# new field 
     commission_type = fields.Selection(
         selection=[
             ("paid", "Paid Invoices"),
@@ -55,28 +50,30 @@ class CommissionReportWizard(models.TransientModel):
 
     def _get_domain(self):
         self.ensure_one()
-    
+
         if self.date_from and self.date_to and self.date_from > self.date_to:
             raise UserError(_("Start Date cannot be greater than End Date."))
-    
+
         domain = [
             ("date", ">=", self.date_from),
             ("date", "<=", self.date_to),
         ]
-    
+
         if self.salesperson_id:
             domain.append(("user_id", "=", self.salesperson_id.id))
-    
+
         if self.customer_ids:
             domain.append(("partner_id", "in", self.customer_ids.ids))
-    
+
         if self.only_positive:
             domain.append(("achieved", ">", 0))
-    
-        # NOTE: commission_type filter is applied in _get_report_lines()
-        # directly against account_move, NOT here, because invoice_payment_state
-        # is a computed non-stored field and cannot be used in domain search.
-    
+
+        # NOTE: the commission_type filter is intentionally NOT applied here.
+        # invoice_payment_state is a computed non-stored field and cannot be
+        # used in a domain search (Odoo 19 raises ValueError: "Cannot convert
+        # ... to SQL because it is not stored"). It is applied in Python in
+        # _get_report_lines() instead.
+
         return domain
 
     def _get_report_lines(self):
@@ -94,7 +91,8 @@ class CommissionReportWizard(models.TransientModel):
         if not move_ids:
             return lines
 
-        # Build the two sets of invoice IDs
+        # Resolve payment state directly against account.move (reliable),
+        # then split the already-generated commission lines by type.
         paid_move_ids = set(
             self.env["account.move"].search([
                 ("id", "in", move_ids),
@@ -108,7 +106,6 @@ class CommissionReportWizard(models.TransientModel):
             ]).ids
         )
 
-        # ✅ THE ACTUAL FILTER — this was missing in your version
         if self.commission_type == "paid":
             valid_move_ids = paid_move_ids
         elif self.commission_type == "posted":
@@ -117,6 +114,7 @@ class CommissionReportWizard(models.TransientModel):
             valid_move_ids = paid_move_ids | posted_move_ids
 
         return lines.filtered(lambda l: l.related_res_id in valid_move_ids)
+
     def _prepare_report_data(self):
         self.ensure_one()
         lines = self._get_report_lines()
@@ -133,14 +131,14 @@ class CommissionReportWizard(models.TransientModel):
             "salesperson_name": self.salesperson_id.name or "",
             "customer_names": ", ".join(self.customer_ids.mapped("name")) if self.customer_ids else "",
             "only_positive": self.only_positive,
-            "commission_type": self.commission_type,#new
+            "commission_type": self.commission_type,
             "total_amount": total_amount,
             "line_ids": lines.ids,
         }
 
     def action_view_lines(self):
         self.ensure_one()
-        lines = self._get_report_lines()   # ✅ use the filtered lines
+        lines = self._get_report_lines()
 
         return {
             "type": "ir.actions.act_window",
@@ -148,7 +146,7 @@ class CommissionReportWizard(models.TransientModel):
             "res_model": "sale.commission.achievement.report",
             "view_mode": "list,pivot,graph",
             "target": "current",
-            "domain": [("id", "in", lines.ids)],   # ✅ filter by exact IDs
+            "domain": [("id", "in", lines.ids)],
             "context": {
                 "search_default_group_by_user_id": 1,
             },
@@ -216,7 +214,6 @@ class CommissionReportWizard(models.TransientModel):
             "num_format": "#,##0.00",
         })
 
-         # ✅ NEW: resolve human-readable label for commission type
         commission_type_label = dict(self._fields["commission_type"].selection).get(
             self.commission_type, self.commission_type
         )
@@ -231,11 +228,6 @@ class CommissionReportWizard(models.TransientModel):
         sheet.write(row, 3, str(self.date_to or ""), cell_format)
         row += 1
 
-         # ✅ NEW: write commission type row in XLSX header
-        sheet.write(row, 0, "Commission Type", header_format)
-        sheet.write(row, 1, commission_type_label, cell_format)
-        row += 2
-
         sheet.write(row, 0, "Salesperson", header_format)
         sheet.write(row, 1, self.salesperson_id.name or "", cell_format)
         sheet.write(row, 2, "Customers", header_format)
@@ -245,6 +237,10 @@ class CommissionReportWizard(models.TransientModel):
             ", ".join(self.customer_ids.mapped("name")) if self.customer_ids else "",
             cell_format,
         )
+        row += 1
+
+        sheet.write(row, 0, "Commission Type", header_format)
+        sheet.write(row, 1, commission_type_label, cell_format)
         row += 2
 
         headers = [
@@ -286,9 +282,6 @@ class CommissionReportWizard(models.TransientModel):
         workbook.close()
         output.seek(0)
 
-        
-
-         # ✅ CHANGED: commission_type added to filename
         file_name = "commission_report_%s_%s_%s.xlsx" % (
             self.commission_type,
             self.date_from or "",

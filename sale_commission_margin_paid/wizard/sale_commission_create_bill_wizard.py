@@ -208,13 +208,37 @@ class SaleCommissionCreateBillWizard(models.TransientModel):
             "invoice_line_ids": invoice_line_commands,
         })
 
+        InvoiceMap = self.env["sale.commission.invoice.map"]
+
         for index, vals in enumerate(map_vals_list):
             vals.update({
                 "vendor_bill_id": bill.id,
                 "vendor_bill_line_id": bill.invoice_line_ids[index].id if index < len(bill.invoice_line_ids) else False,
                 "state": "invoiced",
             })
-            self.env["sale.commission.invoice.map"].create(vals)
+
+            # A record may already exist for this (user, plan, target,
+            # source) key if the accrual journal entry was created
+            # automatically when the source invoice was posted. Reuse it
+            # instead of creating a duplicate, which would violate the
+            # unique SQL constraint and would orphan the accrual JE link.
+            existing = InvoiceMap.search([
+                ("user_id", "=", vals["user_id"]),
+                ("plan_id", "=", vals["plan_id"]),
+                ("target_id", "=", vals["target_id"]),
+                ("source_model", "=", vals["source_model"]),
+                ("source_res_id", "=", vals["source_res_id"]),
+                ("company_id", "=", vals["company_id"]),
+            ], limit=1)
+
+            if existing:
+                existing.write({
+                    "vendor_bill_id": bill.id,
+                    "vendor_bill_line_id": vals["vendor_bill_line_id"],
+                    "state": "invoiced",
+                })
+            else:
+                InvoiceMap.create(vals)
 
         return {
             "type": "ir.actions.act_window",

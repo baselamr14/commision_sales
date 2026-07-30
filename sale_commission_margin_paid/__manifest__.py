@@ -1,7 +1,7 @@
 {
     "name": "Sales Commission Margin Paid",
-    "version": "19.0.1.0.0",
-    "summary": "Adds a paid-invoice margin commission type",
+    "version": "19.0.2.0.0",
+    "summary": "Adds a paid-invoice margin commission type with accrual accounting",
     "category": "Sales/Commissions",
     "author": "Basel Noor",
     "license": "OPL-1",
@@ -11,9 +11,13 @@
         "sale_commission_subscription",
         "sale_margin",
         "account",
+        "base_setup",
     ],
     "data": [
         "security/ir.model.access.csv",
+        "data/commission_payable_cron.xml",
+        "views/res_config_settings_views.xml",
+        "views/sale_commission_invoice_map_views.xml",
         "views/sale_commission_create_bill_wizard_views.xml",
         "views/commission_report_wizard_views.xml",
         "views/commission_report_menu.xml",

@@ -7,11 +7,11 @@ class SaleCommissionPlanAchievement(models.Model):
     type = fields.Selection(
         selection_add=[
             ("margin_paid", "Margin (Paid Invoices)"),
-            ("margin_posted", "Margin (Posted Invoices)"),  # ✅ NEW
+            ("margin_posted", "Margin (Posted Invoices)"),
         ],
         ondelete={
             "margin_paid": "cascade",
-            "margin_posted": "cascade",               # ✅ NEW
+            "margin_posted": "cascade",
         },
     )
 
@@ -19,12 +19,10 @@ class SaleCommissionPlanAchievement(models.Model):
         self.ensure_one()
 
         if self.type == "margin_paid":
-            # ✅ CHANGED: now delegates to shared helper
             return self._get_margin_by_payment_state(
                 salesperson, date_from, date_to, payment_state="paid"
             )
 
-        # ✅ NEW: posted invoices branch
         if self.type == "margin_posted":
             return self._get_margin_by_payment_state(
                 salesperson, date_from, date_to, payment_state=None
@@ -32,11 +30,12 @@ class SaleCommissionPlanAchievement(models.Model):
 
         return super()._compute_achievement_value(salesperson, date_from, date_to)
 
-    # ✅ NEW: shared helper replacing the old _get_margin_paid
     def _get_margin_by_payment_state(self, salesperson, date_from, date_to, payment_state):
         """
-        payment_state='paid'  → only fully collected invoices
-        payment_state=None    → all posted invoices regardless of payment
+        Compute margin commission for the given salesperson and date range.
+
+        :param payment_state: if 'paid', restrict to fully paid invoices only;
+                              if None, include all posted invoices regardless of payment.
         """
         domain = [
             ("move_id.state", "=", "posted"),
@@ -54,7 +53,7 @@ class SaleCommissionPlanAchievement(models.Model):
         lines = self.env["account.move.line"].search(domain)
         return sum(lines.mapped("margin_paid_base"))
 
-    # ✅ NEW: backward-compat alias so any external callers still work
+    # Keep the old helper as an alias so any existing calls still work
     def _get_margin_paid(self, salesperson, date_from, date_to):
         return self._get_margin_by_payment_state(
             salesperson, date_from, date_to, payment_state="paid"
@@ -62,7 +61,6 @@ class SaleCommissionPlanAchievement(models.Model):
 
     def _compute_commission(self, amount, achieved):
         self.ensure_one()
-        # ✅ CHANGED: handles both types
         if self.type in ("margin_paid", "margin_posted"):
             return achieved
         return super()._compute_commission(amount, achieved)

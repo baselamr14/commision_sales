@@ -20,7 +20,6 @@
                                 <td><strong>Customers</strong></td>
                                 <td><span t-esc="', '.join(docs.customer_ids.mapped('name')) if docs.customer_ids else ''"/></td>
                             </tr>
-                            <!-- ✅ NEW row -->
                             <tr>
                                 <td><strong>Commission Type</strong></td>
                                 <td colspan="3">
@@ -50,14 +49,18 @@
                                 <td><span t-esc="line.user_id.name"/></td>
                                 <td><span t-esc="line.partner_id.name"/></td>
                                 <td><span t-esc="line.target_id.display_name"/></td>
-                                <td class="text-end"><span t-esc="line.achieved"/></td>
+                                <td class="text-end">
+                                    <span t-esc="line.achieved"/>
+                                </td>
                                 <td><span t-esc="line.currency_id.name"/></td>
                             </tr>
                         </tbody>
                         <tfoot>
                             <tr>
                                 <td colspan="4"><strong>Total</strong></td>
-                                <td class="text-end"><strong t-esc="total"/></td>
+                                <td class="text-end">
+                                    <strong t-esc="total"/>
+                                </td>
                                 <td/>
                             </tr>
                         </tfoot>

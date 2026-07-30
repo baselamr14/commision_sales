@@ -11,7 +11,7 @@
                     <field name="date_to"/>
                     <field name="salesperson_id"/>
                     <field name="customer_ids" widget="many2many_tags"/>
-                    <field name="commission_type" widget="radio"/>  <!-- ✅ NEW -->
+                    <field name="commission_type" widget="radio"/>
                     <field name="only_positive"/>
                 </group>
 
@@ -20,18 +20,22 @@
                             string="View Lines"
                             type="object"
                             class="btn-primary"/>
+
                     <button name="action_open_create_vendor_bill"
                             string="Create Vendor Bill"
                             type="object"
                             class="btn-secondary"/>
+
                     <button name="action_print_pdf"
                             string="Print PDF"
                             type="object"
                             class="btn-secondary"/>
+
                     <button name="action_export_xlsx"
                             string="Export XLSX"
                             type="object"
                             class="btn-secondary"/>
+
                     <button string="Cancel"
                             special="cancel"
                             class="btn-secondary"/>
