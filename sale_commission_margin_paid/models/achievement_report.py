@@ -46,7 +46,6 @@ class SaleCommissionAchievementReport(models.Model):
 
     @api.model
     def _get_invoices_rates(self):
-        _logger.warning("CUSTOM _get_invoices_rates CALLED")
         rates = super()._get_invoices_rates()
         # Add both custom rate types
         for rate in ("margin_paid", "margin_posted"):
@@ -56,7 +55,7 @@ class SaleCommissionAchievementReport(models.Model):
 
     @api.model
     def _get_filtered_moves_cte(self, users=None, teams=None):
-        _logger.warning("CUSTOM _get_filtered_moves_cte CALLED")
+        # unchanged — same CTE as before
         date_from, date_to = self._get_achievement_default_dates()
         today = fields.Date.today().strftime("%Y-%m-%d")
         date_from_str = date_from and datetime.strftime(date_from, "%Y-%m-%d")
@@ -88,7 +87,6 @@ class SaleCommissionAchievementReport(models.Model):
 
     @api.model
     def _get_invoice_rates_product(self):
-        _logger.warning("CUSTOM _get_invoice_rates_product CALLED")
         return """
         CASE
             WHEN fm.move_type = 'out_invoice' THEN
@@ -140,7 +138,6 @@ class SaleCommissionAchievementReport(models.Model):
 
     @api.model
     def _invoices_lines(self, users=None, teams=None):
-        _logger.warning("CUSTOM _invoices_lines CALLED")
         return f"""
 {self._get_filtered_moves_cte(users=users, teams=teams)},
 invoices_rules AS (
@@ -179,15 +176,13 @@ invoice_commission_lines_team AS (
       AND fm.date BETWEEN rules.date_from AND rules.date_to
       AND (rules.product_id IS NULL OR rules.product_id = aml.product_id)
       AND (rules.product_categ_id IS NULL OR rules.product_categ_id = pt.categ_id)
+      /* ✅ CHANGED: margin_paid still requires payment, margin_posted does not */
       AND (
             (rules.margin_paid_rate = 0 OR fm.payment_state = 'paid')
             AND
             rules.margin_posted_rate >= 0
           )
-    GROUP BY
-        fm.id,
-        rules.plan_id,
-        rules.user_id
+    GROUP BY fm.id, rules.plan_id, rules.user_id
 ),
 invoice_commission_lines_user AS (
     SELECT
@@ -202,15 +197,13 @@ invoice_commission_lines_user AS (
       AND fm.date BETWEEN rules.date_from AND rules.date_to
       AND (rules.product_id IS NULL OR rules.product_id = aml.product_id)
       AND (rules.product_categ_id IS NULL OR rules.product_categ_id = pt.categ_id)
+      /* ✅ CHANGED: same guard as team lines above */
       AND (
             (rules.margin_paid_rate = 0 OR fm.payment_state = 'paid')
             AND
             rules.margin_posted_rate >= 0
           )
-    GROUP BY
-        fm.id,
-        rules.plan_id,
-        rules.user_id
+    GROUP BY fm.id, rules.plan_id, rules.user_id
 ),
 invoice_commission_lines AS (
     (
