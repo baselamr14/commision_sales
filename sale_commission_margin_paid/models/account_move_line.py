@@ -48,31 +48,27 @@ class AccountMoveLine(models.Model):
 
         Whether the user clicks "Register Payment" or reconciles a bank
         statement line, the underlying journal items are reconciled via
-        this method. After reconciliation completes, any linked customer
-        invoice/refund may have just become fully settled, so we trigger
-        the commission payable journal entry for those.
+        this method. After reconciliation completes, the linked
+        invoice/credit note may have gained (or changed) its settled
+        fraction, so we re-evaluate the PROPORTIONAL commission payable for
+        each affected document.
 
-        This is more reliable than watching account.move.payment_state in
-        write(), because payment_state is a computed-stored field whose
-        recompute does not always surface in a write() the override sees.
+        _sync_payable_journal_entry() is idempotent and posts only the
+        delta for the newly-settled fraction, so it is safe to call on
+        every reconciliation (including each partial payment).
         """
-        # Collect the invoices touched by these lines before reconciling,
-        # so we can re-evaluate their settlement state afterwards.
         candidate_moves = self.mapped("move_id").filtered(
             lambda m: m.move_type in ("out_invoice", "out_refund")
         )
 
         result = super().reconcile()
 
-        settled_states = ("paid", "in_payment")
         if candidate_moves:
-            # Invalidate so payment_state reflects the reconciliation we
-            # just performed.
-            candidate_moves.invalidate_recordset(["payment_state"])
-            newly_settled = candidate_moves.filtered(
-                lambda m: m.payment_state in settled_states
+            # Invalidate so residual/payment_state reflect the
+            # reconciliation we just performed.
+            candidate_moves.invalidate_recordset(
+                ["payment_state", "amount_residual"]
             )
-            if newly_settled:
-                newly_settled._create_commission_payable_entries()
+            candidate_moves._sync_commission_payable_entries()
 
         return result

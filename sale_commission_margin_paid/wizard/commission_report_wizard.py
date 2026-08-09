@@ -69,10 +69,10 @@ class CommissionReportWizard(models.TransientModel):
             domain.append(("achieved", ">", 0))
 
         # NOTE: the commission_type filter is intentionally NOT applied here.
-        # invoice_payment_state is a computed non-stored field and cannot be
-        # used in a domain search (Odoo 19 raises ValueError: "Cannot convert
-        # ... to SQL because it is not stored"). It is applied in Python in
-        # _get_report_lines() instead.
+        # It depends on the invoice payment_state, which is a computed
+        # non-stored field on the report and cannot be used in a domain
+        # search (Odoo silently returns nothing). It is applied in Python
+        # in _get_report_lines() instead.
 
         return domain
 

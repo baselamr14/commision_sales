@@ -9,16 +9,18 @@
                 <field name="source_date"/>
                 <field name="user_id"/>
                 <field name="customer_id"/>
+                <field name="document_type"/>
                 <field name="reference"/>
                 <field name="achieved_amount" sum="Total"/>
+                <field name="payable_posted" sum="Payable Posted"/>
                 <field name="currency_id" column_invisible="1"/>
                 <field name="journal_state" widget="badge"
                        decoration-info="journal_state == 'pending'"
-                       decoration-warning="journal_state == 'accrued'"
+                       decoration-warning="journal_state in ('accrued','partial')"
                        decoration-success="journal_state == 'payable'"/>
                 <field name="accrual_move_id"/>
-                <field name="payable_move_id"/>
-                <field name="vendor_bill_id"/>
+                <field name="origin_invoice_id" optional="show"/>
+                <field name="vendor_bill_id" optional="hide"/>
             </list>
         </field>
     </record>
@@ -35,12 +37,12 @@
                             class="btn-primary"
                             invisible="journal_state != 'pending'"/>
                     <button name="action_create_payable_entry"
-                            string="Create Payable Entry"
+                            string="Sync Payable Entry"
                             type="object"
                             class="btn-primary"
-                            invisible="journal_state != 'accrued'"/>
+                            invisible="journal_state not in ('accrued','partial')"/>
                     <field name="journal_state" widget="statusbar"
-                           statusbar_visible="pending,accrued,payable"/>
+                           statusbar_visible="pending,accrued,partial,payable"/>
                 </header>
                 <sheet>
                     <group col="2">
@@ -50,20 +52,44 @@
                             <field name="customer_id"/>
                             <field name="plan_id"/>
                             <field name="target_id"/>
+                            <field name="document_type"/>
                             <field name="source_invoice_id"/>
+                            <field name="origin_invoice_id"
+                                   invisible="document_type != 'credit_note'"/>
                             <field name="source_date"/>
-                            <field name="achieved_amount"/>
-                            <field name="currency_id"/>
-                            <field name="reference"/>
                             <field name="state"/>
                         </group>
-                        <group string="Accounting">
+                        <group string="Amounts">
+                            <field name="achieved_amount"/>
+                            <field name="payable_posted"/>
+                            <field name="currency_id"/>
+                            <field name="reference"/>
+                        </group>
+                        <group string="Accrual">
+                            <field name="accrual_posted"/>
                             <field name="accrual_move_id"/>
-                            <field name="payable_move_id"/>
+                        </group>
+                        <group string="Vendor Bill">
                             <field name="vendor_bill_id"/>
                             <field name="vendor_bill_line_id"/>
                         </group>
                     </group>
+                    <notebook>
+                        <page string="Journal Entry Ledger" name="je_ledger">
+                            <field name="journal_entry_ids">
+                                <list string="Journal Entries">
+                                    <field name="entry_type" widget="badge"
+                                           decoration-info="entry_type == 'accrual'"
+                                           decoration-success="entry_type == 'payable'"/>
+                                    <field name="move_id"/>
+                                    <field name="amount" sum="Net"/>
+                                    <field name="paid_fraction_at_posting"
+                                           widget="percentage"/>
+                                    <field name="currency_id" column_invisible="1"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
                 </sheet>
             </form>
         </field>

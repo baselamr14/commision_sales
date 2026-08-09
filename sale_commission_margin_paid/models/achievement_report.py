@@ -1,9 +1,6 @@
-import logging
 from datetime import datetime
 
 from odoo import api, fields, models
-
-_logger = logging.getLogger(__name__)
 
 
 class SaleCommissionPlanAchievement(models.Model):
@@ -46,7 +43,6 @@ class SaleCommissionAchievementReport(models.Model):
 
     @api.model
     def _get_invoices_rates(self):
-        _logger.warning("CUSTOM _get_invoices_rates CALLED")
         rates = super()._get_invoices_rates()
         # Add both custom rate types
         for rate in ("margin_paid", "margin_posted"):
@@ -56,7 +52,6 @@ class SaleCommissionAchievementReport(models.Model):
 
     @api.model
     def _get_filtered_moves_cte(self, users=None, teams=None):
-        _logger.warning("CUSTOM _get_filtered_moves_cte CALLED")
         date_from, date_to = self._get_achievement_default_dates()
         today = fields.Date.today().strftime("%Y-%m-%d")
         date_from_str = date_from and datetime.strftime(date_from, "%Y-%m-%d")
@@ -88,7 +83,6 @@ class SaleCommissionAchievementReport(models.Model):
 
     @api.model
     def _get_invoice_rates_product(self):
-        _logger.warning("CUSTOM _get_invoice_rates_product CALLED")
         return """
         CASE
             WHEN fm.move_type = 'out_invoice' THEN
@@ -140,7 +134,6 @@ class SaleCommissionAchievementReport(models.Model):
 
     @api.model
     def _invoices_lines(self, users=None, teams=None):
-        _logger.warning("CUSTOM _invoices_lines CALLED")
         return f"""
 {self._get_filtered_moves_cte(users=users, teams=teams)},
 invoices_rules AS (

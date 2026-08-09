@@ -6,3 +6,4 @@ from . import commission_report
 from . import res_company
 from . import res_config_settings
 from . import sale_commission_invoice_map
+from . import sale_commission_journal_entry
